@@ -1,0 +1,517 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gemini: インタラクティブ・レポート (スライド形式)</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;500;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Noto Sans JP', sans-serif;
+            background-color: #f8f9fa;
+            overflow-x: hidden; /* Prevent horizontal scrollbar during slide transitions */
+        }
+        .slide-container {
+            position: relative;
+            width: 100%;
+            overflow: hidden;
+        }
+        .slide {
+            min-height: calc(100vh - 200px); /* Adjust based on header/footer height */
+            width: 100%;
+            position: absolute;
+            top: 0;
+            left: 0;
+            transition: transform 0.5s ease-in-out;
+            opacity: 0;
+            visibility: hidden;
+            transform: translateX(100%); /* Start off-screen to the right */
+        }
+        .slide.active {
+            opacity: 1;
+            visibility: visible;
+            transform: translateX(0);
+            position: relative; /* Take up space in document flow */
+        }
+        .slide.prev-slide {
+            transform: translateX(-100%); /* Move to the left when it's a previous slide */
+        }
+        .card {
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+            background-color: #f3f4f6;
+        }
+        .card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+        }
+        .chart-container {
+            position: relative;
+            width: 100%;
+            max-width: 600px;
+            margin-left: auto;
+            margin-right: auto;
+            height: 300px;
+            max-height: 350px;
+        }
+        @media (min-width: 768px) {
+            .chart-container {
+                height: 350px;
+                max-height: 400px;
+            }
+        }
+        .gemini-button {
+            background-color: #3b82f6;
+            color: white;
+            transition: background-color 0.3s ease;
+        }
+        .gemini-button:hover {
+            background-color: #2563eb;
+        }
+        .gemini-button:disabled {
+            background-color: #9ca3af;
+            cursor: not-allowed;
+        }
+        .loading-spinner {
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid #3b82f6;
+            border-radius: 50%;
+            width: 24px;
+            height: 24px;
+            animation: spin 1s linear infinite;
+            margin-right: 8px;
+        }
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        .slide-nav-button {
+            position: fixed;
+            top: 50%;
+            transform: translateY(-50%);
+            background-color: rgba(0, 0, 0, 0.3);
+            color: white;
+            border: none;
+            padding: 10px 15px;
+            border-radius: 50%;
+            cursor: pointer;
+            z-index: 1000;
+            transition: background-color 0.3s ease;
+        }
+        .slide-nav-button:hover {
+            background-color: rgba(0, 0, 0, 0.5);
+        }
+        .slide-nav-button:disabled {
+            background-color: rgba(0, 0, 0, 0.1);
+            cursor: not-allowed;
+        }
+        #prevSlide { left: 20px; }
+        #nextSlide { right: 20px; }
+        .slide-indicator {
+            text-align: center;
+            margin-top: 20px;
+            font-size: 0.9em;
+            color: #6b7280;
+        }
+    </style>
+</head>
+<body class="bg-gray-50 text-gray-800">
+
+    <div class="container mx-auto p-4 md:p-8 max-w-5xl">
+
+        <header class="text-center mb-8 md:mb-12">
+            <h1 class="text-4xl md:text-5xl font-bold text-gray-800">Gemini</h1>
+            <p class="text-lg text-blue-600 font-medium mt-2">次世代AIのインタラクティブ・スライド</p>
+        </header>
+
+        <main class="slide-container">
+            <section id="overview" class="slide">
+                <div class="bg-white p-6 md:p-8 rounded-lg shadow-md min-h-[70vh] flex flex-col justify-center">
+                    <h2 class="text-2xl md:text-3xl font-bold mb-4 text-gray-800 text-center">AIの新たな地平を拓く</h2>
+                    <p class="mb-6 text-gray-700 leading-relaxed text-center max-w-3xl mx-auto">このスライドでは、Googleが開発した最先端AI「Gemini」の基本的な概念と、その開発背景について紹介します。Geminiがどのような目的で生まれ、AI技術の未来にどのような変革をもたらそうとしているのか、その核心に迫ります。</p>
+                    <div class="grid md:grid-cols-2 gap-8 items-center mt-8">
+                        <div class="text-center p-4">
+                             <div class="text-7xl md:text-8xl text-blue-500">🧠</div>
+                             <p class="mt-2 text-gray-600">マルチモーダル理解</p>
+                        </div>
+                        <div class="prose max-w-none prose-blue">
+                            <h3 class="text-xl font-semibold mb-2 text-blue-700">Googleによる最先端マルチモーダルAI</h3>
+                            <p class="text-gray-700 mb-4">Geminiは、テキスト、画像、音声、動画、コードといった多様な種類の情報をネイティブに理解し、それらを統合して高度な推論を行うことができる「マルチモーダルAI」です。</p>
+                            <h3 class="text-xl font-semibold mb-2 text-blue-700">開発の背景と目的</h3>
+                            <p class="text-gray-700">より汎用的で高性能なAIを追求し、人々の生産性や創造性を飛躍的に向上させることがGeminiの目的です。</p>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <section id="features" class="slide">
+                <div class="bg-white p-6 md:p-8 rounded-lg shadow-md min-h-[70vh] flex flex-col justify-center">
+                    <h2 class="text-2xl md:text-3xl font-bold mb-4 text-gray-800 text-center">Geminiのコア機能</h2>
+                    <p class="mb-8 text-gray-700 leading-relaxed text-center max-w-3xl mx-auto">ここでは、Geminiを特徴づける主要な機能、「マルチモーダル性能」と「柔軟なスケーラビリティ」を解説します。チャートや図解を通じて、これらの能力がどのように連携し、Geminiの強力なパフォーマンスを実現しているかを探ります。</p>
+                     <div class="space-y-10">
+                        <div>
+                            <h3 class="text-xl md:text-2xl font-semibold mb-6 text-center text-blue-700">圧倒的なマルチモーダル性能</h3>
+                            <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-4 text-center">
+                                <div class="p-4 bg-blue-50 rounded-lg shadow-sm"><span class="text-3xl">✍️</span><p class="font-medium mt-2 text-sm text-blue-800">テキスト</p></div>
+                                <div class="p-4 bg-green-50 rounded-lg shadow-sm"><span class="text-3xl">🖼️</span><p class="font-medium mt-2 text-sm text-green-800">画像</p></div>
+                                <div class="p-4 bg-yellow-50 rounded-lg shadow-sm"><span class="text-3xl">🔊</span><p class="font-medium mt-2 text-sm text-yellow-800">音声</p></div>
+                                <div class="p-4 bg-purple-50 rounded-lg shadow-sm"><span class="text-3xl">🎬</span><p class="font-medium mt-2 text-sm text-purple-800">動画</p></div>
+                                <div class="p-4 bg-red-50 rounded-lg shadow-sm col-span-2 sm:col-span-1 md:col-span-1"><span class="text-3xl">💻</span><p class="font-medium mt-2 text-sm text-red-800">コード</p></div>
+                            </div>
+                            <p class="text-center mt-6 text-gray-600">これらの情報を区別なく統合的に処理し、深い理解と生成を実現します。</p>
+                        </div>
+
+                        <div>
+                             <h3 class="text-xl md:text-2xl font-semibold mb-6 text-center text-blue-700">柔軟なスケーラビリティ</h3>
+                            <p class="text-center mb-6 text-gray-600">タスクの複雑さに応じて最適化された3つのモデルが存在します。下のチャートは、各モデルが対応するタスクの複雑性の概念的なレベルを示しています。</p>
+                            <div class="chart-container bg-gray-50 p-4 rounded-lg">
+                                <canvas id="scalabilityChart"></canvas>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <section id="use-cases" class="slide">
+                 <div class="bg-white p-6 md:p-8 rounded-lg shadow-md min-h-[70vh] flex flex-col justify-center">
+                    <h2 class="text-2xl md:text-3xl font-bold mb-4 text-gray-800 text-center">多岐にわたる活用例</h2>
+                    <p class="mb-8 text-gray-700 leading-relaxed text-center max-w-3xl mx-auto">Geminiは、私たちの仕事や学習、創造活動のあり方を大きく変える可能性を秘めています。具体的な活用分野をカテゴリ別に紹介します。興味のあるカードをクリックして詳細な活用例を確認し、さらにGemini APIを利用して関連アイデアを生成してみましょう。</p>
+                    <div id="use-case-grid" class="grid md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
+                        </div>
+                    <div id="use-case-details-container" class="mt-8 w-full max-w-2xl mx-auto" style="display: none;">
+                        <div class="p-6 bg-blue-50 rounded-lg shadow">
+                            <h4 id="details-title" class="font-bold text-xl md:text-2xl mb-4 text-blue-800"></h4>
+                            <ul id="details-list" class="list-disc list-inside text-gray-700 space-y-2 mb-6"></ul>
+                            <button id="generateIdeasButton" class="gemini-button w-full md:w-auto flex items-center justify-center font-semibold py-2 px-4 rounded-lg shadow-md">
+                                <span id="buttonText">✨ この活用例でGeminiにアイデアを提案してもらう</span>
+                                <div id="loadingSpinner" class="loading-spinner" style="display: none;"></div>
+                            </button>
+                            <div id="geminiIdeasResult" class="mt-6 p-4 bg-white border border-blue-200 rounded-md shadow-sm" style="display: none;">
+                                <h5 class="font-semibold text-lg mb-2 text-blue-700">Geminiからの提案アイデア：</h5>
+                                <div id="geminiResponseContent" class="text-gray-700 whitespace-pre-wrap"></div>
+                            </div>
+                             <p id="geminiError" class="mt-4 text-red-600" style="display:none;"></p>
+                        </div>
+                    </div>
+                 </div>
+            </section>
+            
+            <section id="ethics" class="slide">
+                <div class="bg-white p-6 md:p-8 rounded-lg shadow-md min-h-[70vh] flex flex-col justify-center">
+                    <h2 class="text-2xl md:text-3xl font-bold mb-4 text-gray-800 text-center">倫理的責任と未来への展望</h2>
+                    <p class="mb-8 text-gray-700 leading-relaxed text-center max-w-3xl mx-auto">AI技術の発展には、倫理的な配慮と責任が不可欠です。ここでは、Gemini開発における倫理原則と、AIがもたらす未来のビジョンについて概説します。安全で信頼性の高いAIが、いかにして人間社会に貢献していくかを探ります。</p>
+                    <div class="grid md:grid-cols-2 gap-8">
+                        <div class="prose prose-sm sm:prose max-w-none prose-blue">
+                            <h3 class="text-xl font-semibold mb-3 text-blue-700">倫理と責任</h3>
+                            <ul class="space-y-3 text-gray-700">
+                                <li class="flex items-start"><span class="mr-3 text-blue-500 text-2xl">🛡️</span>AIの安全性と信頼性の確保（バイアス低減、公平性追求）</li>
+                                <li class="flex items-start"><span class="mr-3 text-blue-500 text-2xl">🔍</span>透明性と説明責任の重視</li>
+                                <li class="flex items-start"><span class="mr-3 text-blue-500 text-2xl">🤝</span>人間中心のアプローチ（AIは人間の能力を拡張するツール）</li>
+                            </ul>
+                        </div>
+                        <div class="prose prose-sm sm:prose max-w-none prose-green">
+                            <h3 class="text-xl font-semibold mb-3 text-green-700">将来展望</h3>
+                            <ul class="space-y-3 text-gray-700">
+                                <li class="flex items-start"><span class="mr-3 text-green-500 text-2xl">🚀</span>さらなる性能向上と新機能の追加</li>
+                                <li class="flex items-start"><span class="mr-3 text-green-500 text-2xl">🌐</span>様々な産業・分野への応用拡大（医療、金融、製造など）</li>
+                                <li class="flex items-start"><span class="mr-3 text-green-500 text-2xl">💡</span>AIとの協調による新たな価値創造</li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+            </section>
+        </main>
+
+        <div class="slide-indicator">
+            <span id="currentSlideNumber">1</span> / <span id="totalSlideNumber">4</span>
+        </div>
+
+        <button id="prevSlide" class="slide-nav-button" aria-label="前のスライドへ">❮</button>
+        <button id="nextSlide" class="slide-nav-button" aria-label="次のスライドへ">❯</button>
+
+        <footer class="text-center mt-8 py-6 border-t border-gray-200">
+            <p class="text-sm text-gray-500">&copy; Gemini インタラクティブ・スライド. All rights reserved.</p>
+        </footer>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            const slides = Array.from(document.querySelectorAll('.slide'));
+            const prevButton = document.getElementById('prevSlide');
+            const nextButton = document.getElementById('nextSlide');
+            const currentSlideNumberDisplay = document.getElementById('currentSlideNumber');
+            const totalSlideNumberDisplay = document.getElementById('totalSlideNumber');
+            let currentSlideIndex = 0;
+            let chartInstance = null;
+
+            totalSlideNumberDisplay.textContent = slides.length;
+
+            function showSlide(index, direction = 'next') {
+                slides.forEach((slide, i) => {
+                    slide.classList.remove('active', 'prev-slide');
+                    if (i === index) {
+                        slide.classList.add('active');
+                        // Ensure chart is re-rendered if it's on the current slide
+                        if (slide.id === 'features' && !chartInstance) {
+                           renderScalabilityChart();
+                        } else if (slide.id === 'features' && chartInstance) {
+                            // Chart.js might need a resize trigger if container was display:none
+                            // This is a common pattern, but Chart.js v3+ often handles this better.
+                            // If issues persist, uncomment:
+                            // setTimeout(() => chartInstance.resize(), 0);
+                        }
+                    } else if (direction === 'next' && i < index) {
+                        slide.style.transform = 'translateX(-100%)'; // Keep previous slides to the left
+                    } else if (direction === 'prev' && i > index) {
+                         slide.style.transform = 'translateX(100%)'; // Keep future slides to the right
+                    }
+                });
+                currentSlideIndex = index;
+                updateNavButtons();
+                updateSlideIndicator();
+            }
+
+            function updateNavButtons() {
+                prevButton.disabled = currentSlideIndex === 0;
+                nextButton.disabled = currentSlideIndex === slides.length - 1;
+            }
+            
+            function updateSlideIndicator() {
+                currentSlideNumberDisplay.textContent = currentSlideIndex + 1;
+            }
+
+            prevButton.addEventListener('click', () => {
+                if (currentSlideIndex > 0) {
+                    const oldSlide = slides[currentSlideIndex];
+                    showSlide(currentSlideIndex - 1, 'prev');
+                    oldSlide.style.transform = 'translateX(100%)'; // Animate out to the right
+                }
+            });
+
+            nextButton.addEventListener('click', () => {
+                if (currentSlideIndex < slides.length - 1) {
+                    const oldSlide = slides[currentSlideIndex];
+                    showSlide(currentSlideIndex + 1, 'next');
+                     oldSlide.style.transform = 'translateX(-100%)'; // Animate out to the left
+                }
+            });
+            
+            // Initialize first slide
+            showSlide(0);
+
+
+            function renderScalabilityChart() {
+                const scalabilityCtx = document.getElementById('scalabilityChart');
+                if (scalabilityCtx && typeof Chart !== 'undefined') {
+                    if(chartInstance) {
+                        chartInstance.destroy();
+                    }
+                    chartInstance = new Chart(scalabilityCtx.getContext('2d'), {
+                        type: 'bar',
+                        data: {
+                            labels: ['Nano', 'Pro', 'Ultra'],
+                            datasets: [{
+                                label: '対応可能なタスクの複雑性（概念値）',
+                                data: [30, 70, 100],
+                                backgroundColor: [
+                                    'rgba(59, 130, 246, 0.6)',
+                                    'rgba(22, 163, 74, 0.6)',
+                                    'rgba(220, 38, 38, 0.6)'
+                                ],
+                                borderColor: [
+                                    'rgba(59, 130, 246, 1)',
+                                    'rgba(22, 163, 74, 1)',
+                                    'rgba(220, 38, 38, 1)'
+                                ],
+                                borderWidth: 1,
+                                borderRadius: 5,
+                            }]
+                        },
+                        options: {
+                            responsive: true,
+                            maintainAspectRatio: false,
+                            indexAxis: 'y',
+                            scales: {
+                                x: {
+                                    beginAtZero: true,
+                                    title: { display: true, text: '複雑性レベル', font: {size: 14}},
+                                    grid: { display: false }
+                                },
+                                y: {
+                                    grid: { display: false },
+                                    ticks: { font: {size: 14}}
+                                }
+                            },
+                            plugins: {
+                                legend: { display: false },
+                                tooltip: {
+                                    enabled: true,
+                                    backgroundColor: 'rgba(0,0,0,0.7)',
+                                    titleFont: { size: 14 },
+                                    bodyFont: { size: 12 },
+                                    callbacks: {
+                                        label: function(context) {
+                                            const model = context.label;
+                                            let description = '';
+                                            if (model === 'Nano') description = 'オンデバイスでの高速処理、効率性重視';
+                                            if (model === 'Pro') description = '幅広いタスクに対応する高性能モデル';
+                                            if (model === 'Ultra') description = '非常に複雑なタスク向けの最大性能モデル';
+                                            return `${model}: ${description}`;
+                                        }
+                                    }
+                                }
+                            },
+                            animation: {
+                                duration: 1000,
+                                easing: 'easeInOutQuart'
+                            }
+                        }
+                    });
+                }
+            }
+
+
+            const useCaseData = {
+                creative: {
+                    title: '🎨 クリエイティブ作成支援',
+                    color: 'blue',
+                    points: ['ブログ記事、小説、脚本、詩などの自動生成・アイデア出し', '画像や動画の説明文、字幕の生成', 'キャッチコピーやマーケティング文案の作成']
+                },
+                analysis: {
+                    title: '📊 情報分析と意思決定',
+                    color: 'green',
+                    points: ['大量の文書やデータからの洞察抽出、要約', '市場トレンド分析、競合分析', '複雑なレポートの自動作成']
+                },
+                development: {
+                    title: '💻 ソフトウェア開発',
+                    color: 'red',
+                    points: ['コードの自動生成、補完、レビュー', 'バグの特定と修正提案', '新しいプログラミング言語の学習支援']
+                },
+                education: {
+                    title: '🎓 教育・学習',
+                    color: 'yellow',
+                    points: ['パーソナライズされた学習プランの作成', '質疑応答、複雑な概念の説明', '外国語学習のサポート']
+                },
+                accessibility: {
+                    title: '🌍 アクセシビリティ',
+                    color: 'purple',
+                    points: ['画像や動画の音声解説生成', 'リアルタイム翻訳によるコミュニケーション支援', '障壁となる情報の変換・要約']
+                }
+            };
+            
+            const useCaseGrid = document.getElementById('use-case-grid');
+            const detailsContainer = document.getElementById('use-case-details-container');
+            const detailsTitle = document.getElementById('details-title');
+            const detailsList = document.getElementById('details-list');
+            const generateIdeasButton = document.getElementById('generateIdeasButton');
+            const geminiIdeasResult = document.getElementById('geminiIdeasResult');
+            const geminiResponseContent = document.getElementById('geminiResponseContent');
+            const geminiError = document.getElementById('geminiError');
+            const buttonText = document.getElementById('buttonText');
+            const loadingSpinner = document.getElementById('loadingSpinner');
+
+            let currentUseCaseKey = null;
+
+            Object.keys(useCaseData).forEach(key => {
+                const item = useCaseData[key];
+                const card = document.createElement('div');
+                card.className = `card p-6 rounded-lg cursor-pointer shadow-md hover:shadow-lg border-l-4 border-${item.color}-500`;
+                card.dataset.usecase = key;
+                
+                const titleElement = document.createElement('h3');
+                titleElement.className = `font-bold text-lg text-${item.color}-700`;
+                titleElement.textContent = item.title;
+                card.appendChild(titleElement);
+                
+                useCaseGrid.appendChild(card);
+            });
+
+
+            useCaseGrid.addEventListener('click', function(e) {
+                const card = e.target.closest('.card');
+                if (!card) return;
+                
+                currentUseCaseKey = card.dataset.usecase;
+                const data = useCaseData[currentUseCaseKey];
+
+                if (data) {
+                    detailsTitle.textContent = data.title;
+                    detailsTitle.className = `font-bold text-xl md:text-2xl mb-4 text-${data.color}-800`;
+                    detailsList.innerHTML = '';
+                    data.points.forEach(point => {
+                        const li = document.createElement('li');
+                        li.textContent = point;
+                        detailsList.appendChild(li);
+                    });
+                    detailsContainer.style.display = 'block';
+                    geminiIdeasResult.style.display = 'none';
+                    geminiResponseContent.textContent = '';
+                    geminiError.style.display = 'none';
+                    generateIdeasButton.disabled = false;
+                    buttonText.textContent = '✨ この活用例でGeminiにアイデアを提案してもらう';
+                    loadingSpinner.style.display = 'none';
+                }
+            });
+
+            generateIdeasButton.addEventListener('click', async function() {
+                if (!currentUseCaseKey) return;
+
+                const useCaseTitle = useCaseData[currentUseCaseKey].title.replace(/🎨 |📊 |💻 |🎓 |🌍 /, '');
+                const prompt = `「${useCaseTitle}」という活用分野について、具体的で革新的なアイデアを3つ、簡潔に提案してください。各アイデアは1-2文程度でお願いします。`;
+
+                generateIdeasButton.disabled = true;
+                buttonText.textContent = 'アイデア生成中...';
+                loadingSpinner.style.display = 'inline-block';
+                geminiIdeasResult.style.display = 'none';
+                geminiError.style.display = 'none';
+
+                try {
+                    let chatHistory = [{ role: "user", parts: [{ text: prompt }] }];
+                    const payload = { contents: chatHistory };
+                    const apiKey = ""; 
+                    const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${apiKey}`;
+                    
+                    const response = await fetch(apiUrl, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(payload)
+                    });
+
+                    if (!response.ok) {
+                        const errorData = await response.json();
+                        throw new Error(errorData.error ? errorData.error.message : `APIエラーが発生しました (ステータス: ${response.status})`);
+                    }
+
+                    const result = await response.json();
+
+                    if (result.candidates && result.candidates.length > 0 &&
+                        result.candidates[0].content && result.candidates[0].content.parts &&
+                        result.candidates[0].content.parts.length > 0) {
+                        const text = result.candidates[0].content.parts[0].text;
+                        geminiResponseContent.textContent = text;
+                        geminiIdeasResult.style.display = 'block';
+                    } else {
+                        throw new Error("APIから有効な応答が得られませんでした。");
+                    }
+
+                } catch (error) {
+                    console.error("Gemini API Error:", error);
+                    geminiError.textContent = `エラー: ${error.message}`;
+                    geminiError.style.display = 'block';
+                } finally {
+                    generateIdeasButton.disabled = false;
+                    buttonText.textContent = '✨ この活用例でGeminiにアイデアを提案してもらう';
+                    loadingSpinner.style.display = 'none';
+                }
+            });
+             // Ensure chart is rendered if features slide is initially active (though unlikely with this setup)
+            if (slides[currentSlideIndex] && slides[currentSlideIndex].id === 'features') {
+                renderScalabilityChart();
+            }
+        });
+    </script>
+</body>
+</html>
